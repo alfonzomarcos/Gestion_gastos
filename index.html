@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Administración de Gastos</title>
+
+  <link rel="stylesheet" href="css/estilos.css">
+
+  <!-- SheetJS: genera archivos .xlsx directamente en el navegador -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+
+<body>
+<main class="app">
+
+  <header class="encabezado">
+    <h1>Administración de Gastos</h1>
+    <p>Registrá, consultá y controlá tus gastos de manera sencilla.</p>
+  </header>
+
+  <!-- Aviso de demo: aclara que los datos no van a una hoja real -->
+  <div class="banner-demo">
+    🧪 <strong>Demo:</strong> los datos se guardan solo en tu navegador, simulando una hoja de cálculo.
+    La versión real los guardaría en Google Sheets.
+    <button type="button" onclick="reiniciarDemo()">Restablecer datos de ejemplo</button>
+  </div>
+
+  <!-- 1. NUEVO GASTO -->
+  <section class="seccion">
+    <div class="seccion-cabecera">
+      <div>
+        <h2>Administración de gastos</h2>
+        <p>Completá los datos para registrar un nuevo gasto.</p>
+      </div>
+      <span class="etiqueta">Nuevo gasto</span>
+    </div>
+
+    <div class="formulario-gasto">
+      <div class="grid-gastos">
+        <div class="campo"><label for="articulo">Artículo</label>
+          <input type="text" id="articulo" placeholder="Ej. Martillo"></div>
+        <div class="campo"><label for="categoria">Categoría</label>
+          <input type="text" id="categoria" placeholder="Ej. Ferretería"></div>
+        <div class="campo"><label for="precio">Precio</label>
+          <input type="number" id="precio" min="0" step="0.01" placeholder="Ej. 8500"></div>
+        <div class="campo"><label for="persona">Persona que compró</label>
+          <input type="text" id="persona" placeholder="Ej. Carlos"></div>
+      </div>
+      <button class="boton boton-principal" onclick="guardarGasto()">Guardar gasto</button>
+    </div>
+  </section>
+
+  <!-- 2. EXPORTAR A EXCEL (usa el período elegido en la sección 5) -->
+  <section class="seccion">
+    <div class="seccion-cabecera">
+      <div>
+        <h2>Exportar información</h2>
+        <p>Generá un archivo Excel con la información del período seleccionado.</p>
+      </div>
+    </div>
+    <button class="boton boton-excel" onclick="generarExcel()">📊 Generar Excel</button>
+  </section>
+
+  <!-- 3. BUSCADOR Y FILTRO POR FECHAS -->
+  <section class="seccion">
+    <div class="seccion-cabecera">
+      <div>
+        <h2>Buscar gastos</h2>
+        <p>Utilizá el buscador o seleccioná un rango de fechas.</p>
+      </div>
+      <span class="etiqueta">Filtros</span>
+    </div>
+
+    <div class="campo buscador">
+      <label for="buscador">Buscar</label>
+      <input type="text" id="buscador" placeholder="Artículo, categoría, persona, ID o fecha..." oninput="filtrarGastos()">
+    </div>
+    <div class="grid-fechas">
+      <div class="campo"><label for="fechaDesde">Desde</label>
+        <input type="date" id="fechaDesde" onchange="filtrarGastos()"></div>
+      <div class="campo"><label for="fechaHasta">Hasta</label>
+        <input type="date" id="fechaHasta" onchange="filtrarGastos()"></div>
+    </div>
+  </section>
+
+  <!-- 4. CAPITAL DE CADA MES (los meses se cargan desde app.js) -->
+  <section class="seccion">
+    <div class="seccion-cabecera">
+      <div>
+        <h2>Capital disponible</h2>
+        <p>Configurá el capital correspondiente a cada período.</p>
+      </div>
+    </div>
+
+    <div class="capital-grid">
+      <div class="campo"><label for="mesCapital">Mes</label>
+        <select id="mesCapital"><option value="">Seleccionar mes</option></select></div>
+      <div class="campo"><label for="anioCapital">Año</label>
+        <input type="number" id="anioCapital" placeholder="2026" min="2000" max="2100"></div>
+      <div class="campo"><label for="capitalDisponible">Capital</label>
+        <input type="number" id="capitalDisponible" placeholder="500000" min="0" step="0.01"></div>
+      <button class="boton boton-capital" onclick="guardarCapitalDesdePagina()">Guardar capital</button>
+    </div>
+  </section>
+
+  <!-- 5. PERÍODO QUE SE CONSULTA (afecta al resumen y al Excel) -->
+  <section class="seccion">
+    <div class="seccion-cabecera">
+      <div>
+        <h2>Período del resumen</h2>
+        <p>Elegí el mes y año que querés consultar.</p>
+      </div>
+    </div>
+
+    <div class="filtro-resumen">
+      <div class="campo"><label for="mesResumen">Mes</label>
+        <select id="mesResumen" onchange="cambiarPeriodo()"></select></div>
+      <div class="campo"><label for="anioResumen">Año</label>
+        <input type="number" id="anioResumen" min="2000" max="2100" onchange="cambiarPeriodo()"></div>
+    </div>
+  </section>
+
+  <!-- 6. TARJETAS DE RESUMEN -->
+  <section class="seccion">
+    <div class="seccion-cabecera">
+      <div>
+        <h2>Resumen</h2>
+        <p>Información general de los gastos del período.</p>
+      </div>
+      <span class="etiqueta">Resumen mensual</span>
+    </div>
+
+    <div class="tarjetas-resumen">
+      <div class="tarjeta"><span class="tarjeta-titulo">Capital disponible</span>
+        <span class="tarjeta-valor" id="capitalDisponibleResumen">$ 0</span></div>
+      <div class="tarjeta"><span class="tarjeta-titulo">Total gastado</span>
+        <span class="tarjeta-valor" id="totalGastado">$ 0</span></div>
+      <div class="tarjeta"><span class="tarjeta-titulo">Saldo restante</span>
+        <span class="tarjeta-valor" id="saldoRestante">$ 0</span></div>
+      <div class="tarjeta"><span class="tarjeta-titulo">Cantidad de gastos</span>
+        <span class="tarjeta-valor" id="cantidadGastos">0</span></div>
+      <div class="tarjeta"><span class="tarjeta-titulo">Promedio por gasto</span>
+        <span class="tarjeta-valor" id="promedioGasto">$ 0</span></div>
+    </div>
+  </section>
+
+  <!-- 7. TABLA DE GASTOS (las filas se dibujan desde app.js) -->
+  <section class="seccion">
+    <div class="seccion-cabecera">
+      <div>
+        <h2>Gastos registrados</h2>
+        <p>Listado de todos los gastos registrados.</p>
+      </div>
+    </div>
+
+    <div class="tabla-wrapper">
+      <table>
+        <thead>
+          <tr><th>ID</th><th>Fecha</th><th>Hora</th><th>Artículo</th><th>Categoría</th><th>Precio</th><th>Persona</th><th>Acciones</th></tr>
+        </thead>
+        <tbody id="cuerpoTabla"></tbody>
+      </table>
+    </div>
+  </section>
+
+</main>
+
+<!-- JavaScript: api-simulada.js (simula la hoja de cálculo) y app.js (lógica de la página) -->
+<script src="js/api-simulada.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
