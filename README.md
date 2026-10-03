@@ -4,6 +4,8 @@ Interfaz web para registrar y controlar los gastos de un negocio. Esta versión 
 
 **Funciones:** alta, edición y borrado de gastos · buscador y filtro por fechas · capital por mes · resumen (total gastado, saldo, promedio) · exportación a Excel · diseño adaptable a celular.
 
+https://alfonzomarcos.github.io/Gestion_gastos/
+
 ## Estructura
 
 ```
